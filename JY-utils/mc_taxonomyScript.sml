@@ -38,6 +38,7 @@ val _ = hide "W";
 (* TODO: See if that can be made into (c * f x) and named _CMUL_POS *)
 
 (* Proof by Claude *)
+(*
 Theorem EXTREAL_SUM_IMAGE_RMUL_POS:
     ∀s. FINITE s ⇒ ∀(f :α -> extreal) (c :extreal). 0 ≤ c ∧ (∀x. x ∈ s ⇒ 0 ≤ f x) ⇒
         ∑ (λx. f x * c) s = ∑ f s * c
@@ -56,7 +57,27 @@ Proof
     simp[] >> irule (GSYM add_rdistrib) >> disj1_tac >> gs[] >>
     irule EXTREAL_SUM_IMAGE_POS >> gs[]
 QED
+*)
+Theorem EXTREAL_SUM_IMAGE_CMUL_POS:
+    ∀s. FINITE s ⇒ ∀f c. 0x ≤ c ∧ (∀x. x ∈ s ⇒ 0 ≤ f x) ⇒
+        ∑ (λx. c * f x) s = c * ∑ f s
+Proof
+    ho_match_mp_tac FINITE_INDUCT >> rw[EXTREAL_SUM_IMAGE_EMPTY,mul_lzero] >>
+    (* Peel e off a sum of non-negative terms. *)
+    ‘∀g. (∀x. x ∈ e INSERT s ⇒ 0 ≤ g x) ⇒ ∑ g (e INSERT s) = g e + ∑ g s’ by (
+        rw[] >> DEP_PURE_ONCE_REWRITE_TAC[EXTREAL_SUM_IMAGE_PROPERTY] >>
+        simp[DELETE_NON_ELEMENT_RWT] >> disj1_tac >> rw[] >>
+        irule pos_not_neginf >> gs[]) >>
+    ‘∑ f (e INSERT s) = f e + ∑ f s’ by (first_assum irule >> metis_tac[IN_INSERT]) >>
+    ‘∑ (λx. c * f x) (e INSERT s) = c * f e + ∑ (λx. c * f x) s’ by (
+        first_assum (qspec_then ‘λx. c * f x’ mp_tac) >> simp[] >>
+        disch_then irule >> rw[] >> irule le_mul >> metis_tac[IN_INSERT]) >>
+    ‘∑ (λx. c * f x) s = c * ∑ f s’ by (first_x_assum irule >> metis_tac[IN_INSERT]) >>
+    simp[] >> irule (GSYM add_ldistrib) >> disj1_tac >> gs[] >>
+    irule EXTREAL_SUM_IMAGE_POS >> gs[]
+QED
 
+(* TODO: reconcile with NESTED_EXTREAL_SUM_IMAGE_REVERSE *)
 (* Proof by Claude *)
 Theorem EXTREAL_SUM_IMAGE_SWAP_POS:
     ∀(f :α -> β -> extreal) A B. FINITE A ∧ FINITE B ∧ (∀x y. x ∈ A ∧ y ∈ B ⇒ 0 ≤ f x y) ⇒
@@ -211,7 +232,7 @@ Proof
 QED
 
 (* The product measure of s is the total weight of the pairs landing in s.   *)
-(* Proof by Claude *)
+(* Proof by Claude, tweaked *)
 Theorem finite_space_POW_general_prod_measure_sum:
     ∀cons A B u v s. FINITE A ∧ FINITE B ∧
         measure_space (A,POW A,u) ∧ measure_space (B,POW B,v) ⇒
@@ -242,8 +263,9 @@ Proof
     ‘∑ (λy. ∑ (λx. 𝟙 s (cons x y) * u {x}) A * v {y}) B =
      ∑ (λy. ∑ (λx. 𝟙 s (cons x y) * u {x} * v {y}) A) B’ by (
         irule EXTREAL_SUM_IMAGE_EQ' >> rw[] >>
-        DEP_PURE_ONCE_REWRITE_TAC[GSYM EXTREAL_SUM_IMAGE_RMUL_POS] >>
-        simp[] >> rw[] >> metis_tac[le_mul,INDICATOR_FN_POS]) >>
+        qmatch_goalsub_abbrev_tac ‘∑ f A’ >> simp[] >>
+        irule $ SRULE [Once mul_comm] $ GSYM $ SRULE [Once mul_comm] EXTREAL_SUM_IMAGE_CMUL_POS >>
+        simp[Abbr ‘f’,le_mul,INDICATOR_FN_POS]) >>
     pop_assum SUBST1_TAC >>
     ‘∑ (λy. ∑ (λx. 𝟙 s (cons x y) * u {x} * v {y}) A) B =
      ∑ (λx. ∑ (λy. 𝟙 s (cons x y) * u {x} * v {y}) B) A’ by (
@@ -384,7 +406,8 @@ Proof
         simp[measure_def,measurable_sets_def,IN_POW]) >>
     ‘∑ (λy. ∑ (λx. u {x} * v {y}) A) B = ∑ (λy. v {y}) B’ suffices_by simp[] >>
     irule EXTREAL_SUM_IMAGE_EQ' >> rw[] >>
-    DEP_PURE_ONCE_REWRITE_TAC[EXTREAL_SUM_IMAGE_RMUL_POS] >> simp[]
+    simp[Once mul_comm] >> 
+    DEP_PURE_ONCE_REWRITE_TAC[EXTREAL_SUM_IMAGE_CMUL_POS] >> simp[]
 QED
 
 (* --------------- Loosening pair_operation_def ------------------------------*)
@@ -952,6 +975,8 @@ Proof
     simp[FINITE_general_cross,GEN_LIST_SET_1]
 QED
 
+
+
 (* Base case of the power channel.                                           *)
 (* Proof by Claude *)
 Theorem list_lift_channel_discrete:
@@ -1018,6 +1043,7 @@ Proof
     irule EXTREAL_PROD_IMAGE_EQ >> gs[GEN_LIST_SET_DEF,EL_DROP]
 QED
 
+(* Proof by Claude *)
 Theorem basic_power_channel_discrete:
     ∀W. discrete_mc W ⇒ ∀n.
         mcdomain (basic_power_channel W n) = GEN_LIST_SET (mcdomain W) (2 ** n) ∧
@@ -1028,7 +1054,6 @@ Theorem basic_power_channel_discrete:
             mcchannel (basic_power_channel W n) xl yls =
                 EXTREAL_SUM_IMAGE (λyl. EXTREAL_PROD_IMAGE (λi. mcp W (EL i xl) (EL i yl)) (count (2 ** n))) yls
 Proof
-    (* Proof by Claude *)
     gen_tac >> strip_tac >> gen_tac >>
     drule_then (qspec_then ‘n’ strip_assume_tac) basic_power_channel_discrete_mcp >>
     simp[] >> rpt strip_tac >>
