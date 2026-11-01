@@ -79,6 +79,7 @@ QED
 
 (* TODO: reconcile with NESTED_EXTREAL_SUM_IMAGE_REVERSE *)
 (* Proof by Claude *)
+(*
 Theorem EXTREAL_SUM_IMAGE_SWAP_POS:
     ∀(f :α -> β -> extreal) A B. FINITE A ∧ FINITE B ∧ (∀x y. x ∈ A ∧ y ∈ B ⇒ 0 ≤ f x y) ⇒
         ∑ (λy. ∑ (λx. f x y) A) B = ∑ (λx. ∑ (λy. f x y) B) A
@@ -97,6 +98,15 @@ Proof
     simp[] >> DEP_PURE_ONCE_REWRITE_TAC[EXTREAL_SUM_IMAGE_IMAGE] >>
     simp[combinTheory.o_DEF,INJ_DEF,FORALL_PROD,EXISTS_PROD] >> disj1_tac >> rw[] >>
     irule pos_not_neginf >> gs[]
+QED
+*)
+Theorem NESTED_EXTREAL_SUM_IMAGE_REVERSE_POS:
+    ∀(f :α -> β -> extreal) A B. FINITE A ∧ FINITE B ∧ (∀x y. x ∈ A ∧ y ∈ B ⇒ 0 ≤ f x y) ⇒
+        ∑ (λx. ∑ (f x) B) A = ∑ (λy. ∑ (λx. f x y) A) B
+Proof
+    rw[] >> irule NESTED_EXTREAL_SUM_IMAGE_REVERSE >>
+    rw[] >> first_x_assum dxrule_all >>
+    Cases_on ‘f x y’ >> simp[]
 QED
 
 (* Proof by Claude *)
@@ -269,7 +279,7 @@ Proof
     pop_assum SUBST1_TAC >>
     ‘∑ (λy. ∑ (λx. 𝟙 s (cons x y) * u {x} * v {y}) A) B =
      ∑ (λx. ∑ (λy. 𝟙 s (cons x y) * u {x} * v {y}) B) A’ by (
-        ho_match_mp_tac EXTREAL_SUM_IMAGE_SWAP_POS >> simp[]) >>
+        ho_match_mp_tac NESTED_EXTREAL_SUM_IMAGE_REVERSE_POS >> simp[]) >>
     pop_assum SUBST1_TAC >>
     ‘∑ (λx. ∑ (λy. 𝟙 s (cons x y) * u {x} * v {y}) B) A =
      ∑ (λp. 𝟙 s (cons (FST p) (SND p)) * u {FST p} * v {SND p}) (A × B)’ by (
@@ -396,7 +406,7 @@ Proof
         irule pos_not_neginf >> irule le_mul >> simp[]) >>
     pop_assum (SUBST1_TAC o SYM) >>
     ‘∑ (λy. ∑ (λx. u {x} * v {y}) A) B = ∑ (λx. ∑ (λy. u {x} * v {y}) B) A’ by (
-        ho_match_mp_tac EXTREAL_SUM_IMAGE_SWAP_POS >> rw[] >> irule le_mul >> simp[]) >>
+        ho_match_mp_tac NESTED_EXTREAL_SUM_IMAGE_REVERSE_POS >> rw[] >> irule le_mul >> simp[]) >>
     pop_assum (SUBST1_TAC o SYM) >>
     ‘∑ (λx. u {x}) A = 1 ∧ ∑ (λy. v {y}) B = 1’ by (
         conj_tac
