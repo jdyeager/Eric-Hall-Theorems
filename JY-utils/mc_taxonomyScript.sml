@@ -121,7 +121,6 @@ Proof
     irule EXTREAL_SUM_IMAGE_POS >> gs[]
 QED
 
-(* TODO: reconcile with NESTED_EXTREAL_SUM_IMAGE_REVERSE *)
 (* Theorem by Claude, proof totally redone *)
 Theorem NESTED_EXTREAL_SUM_IMAGE_REVERSE_POS:
     ∀(f :α -> β -> extreal) A B. FINITE A ∧ FINITE B ∧ (∀x y. x ∈ A ∧ y ∈ B ⇒ 0 ≤ f x y) ⇒
@@ -184,8 +183,7 @@ Proof
 QED
 
 (* Proof by Claude *)
-(* TODO: add _sum to name? *)
-Theorem discrete_measure_space_pos_fn_integral:
+Theorem discrete_measure_space_pos_fn_integral_sum:
     ∀m f. discrete_measure_space m ∧ (∀x. x ∈ m_space m ⇒ 0 ≤ f x) ⇒
         ∫⁺ m f = ∑ (λx. f x * measure m {x}) (m_space m)
 Proof
@@ -299,14 +297,14 @@ Proof
     ‘∀x y. x ∈ m_space m0 ∧ y ∈ m_space m1 ⇒ 0 ≤ 𝟙 s (cons x y) * measure m0 {x} * measure m1 {y}’ by
         metis_tac[le_mul,INDICATOR_FN_POS] >>
     (* Both integrals collapse to sums over the atoms (y outer, x inner).     *)
-    ‘∀y. ∫⁺ m0 (λx. 𝟙 s (cons x y)) = ∑ (λx. 𝟙 s (cons x y) * measure m0 {x}) (m_space m0)’ by (
-        rw[] >> qspecl_then [‘m0’,‘λx. 𝟙 s (cons x y)’] mp_tac discrete_measure_space_pos_fn_integral >>
+    ‘∀y. ∫⁺ m0 (λx. 𝟙 s (cons x y)) = ∑ (λx. 𝟙 s (cons x y) * measure m0 {x}) (m_space m0)’ by (rw[] >>
+        qspecl_then [‘m0’,‘λx. 𝟙 s (cons x y)’] mp_tac discrete_measure_space_pos_fn_integral_sum >>
         simp[INDICATOR_FN_POS]) >>
     ‘general_prod_measure cons m0 m1 s =
      ∑ (λy. ∑ (λx. 𝟙 s (cons x y) * measure m0 {x}) (m_space m0) * measure m1 {y}) (m_space m1)’ by (
         simp[general_prod_measure_def] >>
         qspecl_then [‘m1’,‘λy. ∑ (λx. 𝟙 s (cons x y) * measure m0 {x}) (m_space m0)’] mp_tac
-            discrete_measure_space_pos_fn_integral >>
+            discrete_measure_space_pos_fn_integral_sum >>
         simp[] >> disch_then irule >>
         rw[] >> irule EXTREAL_SUM_IMAGE_POS >>
         simp[le_mul,INDICATOR_FN_POS]) >>
